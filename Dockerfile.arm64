@@ -1,0 +1,17 @@
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+RUN apk add --no-cache git
+RUN git clone --depth 1 https://github.com/calcom/cal.com.git .
+RUN yarn install --frozen-lockfile
+RUN yarn build
+
+FROM node:20-alpine
+WORKDIR /app
+COPY --from=builder /app .
+
+ENV NEXTAUTH_SECRET=changeme
+ENV DATABASE_URL=file:./db.sqlite
+
+EXPOSE 3000
+CMD ["yarn", "start"]
