@@ -1,13 +1,23 @@
 FROM node:20-bullseye-slim AS builder
+
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y git openssl libssl-dev
+RUN apt-get update && apt-get install -y git openssl libssl-dev python3 make g++
 
-RUN git clone --depth 1 https://github.com/calcom/cal.com.git .
-RUN yarn install --frozen-lockfile
-RUN yarn build
+# Clonar sin historial y solo lo necesario
+RUN git clone --depth=1 https://github.com/calcom/cal.com.git .
 
+# Instalar dependencias sin logs innecesarios
+RUN yarn install --frozen-lockfile --silent
+
+# Compilar app con entorno controlado
+ENV NEXTAUTH_SECRET=changeme
+ENV DATABASE_URL=file:./db.sqlite
+RUN yarn build --silent
+
+# Segunda etapa liviana
 FROM node:20-bullseye-slim
+
 WORKDIR /app
 COPY --from=builder /app .
 
